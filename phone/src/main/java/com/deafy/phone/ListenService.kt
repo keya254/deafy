@@ -119,7 +119,7 @@ class ListenService : Service() {
         val text = if (parts.isEmpty()) "Starting" else parts.joinToString(" + ") + " on"
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-            .setContentTitle("Deafy is listening")
+            .setContentTitle("Caption Flow is listening")
             .setContentText(text)
             .setOngoing(true)
             .setContentIntent(openIntent)

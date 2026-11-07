@@ -158,21 +158,42 @@ enum class VibePattern(val title: String, val waveform: LongArray) {
  */
 object SoundLabels {
     val ALL: Map<String, String> = linkedMapOf(
+        // Traffic and vehicles (on by default unless noted)
         "Vehicle horn, car horn, honking" to "Car horn",
+        "Air horn, truck horn" to "Truck horn",
+        "Train horn" to "Train horn",
+        "Reversing beeps" to "Reversing beep",
+        "Emergency vehicle" to "Emergency vehicle",
+        "Police car (siren)" to "Police siren",
+        "Ambulance (siren)" to "Ambulance",
+        "Fire engine, fire truck (siren)" to "Fire truck siren",
         "Siren" to "Siren",
+        "Traffic noise, roadway noise" to "Traffic",   // off by default: constant background
+        "Motorcycle" to "Motorcycle",                   // off by default
+        "Truck" to "Truck",                             // off by default
+        "Bus" to "Bus",                                 // off by default
+        "Car" to "Car",                                 // off by default
+        // Home and safety
         "Smoke detector, smoke alarm" to "Smoke alarm",
         "Fire alarm" to "Fire alarm",
         "Alarm" to "Alarm",
+        "Car alarm" to "Car alarm",                     // off by default
         "Doorbell" to "Doorbell",
         "Baby cry, infant cry" to "Baby crying",
-        "Bicycle bell" to "Bicycle bell",
-        "Knock" to "Knock",
+        "Bicycle bell" to "Bicycle bell",               // off by default
+        "Knock" to "Knock",                             // off by default
     )
 
     /** Enabled by default on first run. */
     val DEFAULT_ENABLED: Set<String> = setOf(
         "Vehicle horn, car horn, honking",
+        "Air horn, truck horn",
+        "Emergency vehicle",
+        "Police car (siren)",
+        "Ambulance (siren)",
+        "Fire engine, fire truck (siren)",
         "Siren",
+        "Reversing beeps",
         "Smoke detector, smoke alarm",
         "Fire alarm",
         "Doorbell",
@@ -182,10 +203,18 @@ object SoundLabels {
     /** Default vibration pattern per sound (raw AudioSet name). */
     val DEFAULT_PATTERN: Map<String, VibePattern> = mapOf(
         "Vehicle horn, car horn, honking" to VibePattern.URGENT,
+        "Air horn, truck horn" to VibePattern.URGENT,
+        "Train horn" to VibePattern.URGENT,
+        "Emergency vehicle" to VibePattern.URGENT,
+        "Police car (siren)" to VibePattern.URGENT,
+        "Ambulance (siren)" to VibePattern.URGENT,
+        "Fire engine, fire truck (siren)" to VibePattern.URGENT,
         "Siren" to VibePattern.URGENT,
+        "Reversing beeps" to VibePattern.SHORT,
         "Smoke detector, smoke alarm" to VibePattern.URGENT,
         "Fire alarm" to VibePattern.URGENT,
         "Alarm" to VibePattern.URGENT,
+        "Car alarm" to VibePattern.SHORT,
         "Doorbell" to VibePattern.SHORT,
         "Baby cry, infant cry" to VibePattern.HEARTBEAT,
         "Bicycle bell" to VibePattern.SHORT,

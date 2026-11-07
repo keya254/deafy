@@ -53,7 +53,8 @@ object Settings {
     private const val KEY_EVENTS = "caption_events"
     private const val KEY_NETWORK = "network_captions"
 
-    private const val KEY_LABELS = "sound_labels"
+    // v2: new traffic defaults. A new key means existing installs pick up the new defaults.
+    private const val KEY_LABELS = "sound_labels_v2"
     private const val KEY_THRESHOLD = "sound_threshold"
     private const val KEY_PATTERN_PREFIX = "pattern_"
 
@@ -122,9 +123,9 @@ object Settings {
         get() = p().getStringSet(KEY_LABELS, SoundLabels.DEFAULT_ENABLED)?.toSet() ?: SoundLabels.DEFAULT_ENABLED
         set(value) = p().edit().putStringSet(KEY_LABELS, value.toSet()).apply()
 
-    /** Minimum model score (0.2..0.9) before a sound is considered. */
+    /** Minimum model score (0.2..0.9) before a sound is considered. Street sounds score lower than clean recordings. */
     var threshold: Float
-        get() = p().getFloat(KEY_THRESHOLD, 0.4f)
+        get() = p().getFloat(KEY_THRESHOLD, 0.3f)
         set(value) = p().edit().putFloat(KEY_THRESHOLD, value.coerceIn(0.2f, 0.9f)).apply()
 
     fun patternFor(rawLabel: String): VibePattern {

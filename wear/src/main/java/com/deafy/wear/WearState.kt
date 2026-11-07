@@ -18,7 +18,7 @@ data class WearUi(
     val alertLabel: String? = null,
     val alertConfidence: Float = 0f,
     val alertTs: Long = 0L,
-    val note: String = "Open Deafy on your phone",
+    val note: String = "Open Caption Flow on your phone",
     /** The phone has older captions to send when the user scrolls up. */
     val hasMoreOlder: Boolean = true,
     val loadingOlder: Boolean = false,

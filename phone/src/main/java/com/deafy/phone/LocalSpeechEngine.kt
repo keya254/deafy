@@ -3,10 +3,6 @@ package com.deafy.phone
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -60,12 +56,11 @@ class LocalSpeechEngine(
     private var recognizer: OfflineRecognizer? = null
     private var denoiser: OfflineSpeechDenoiser? = null
     private var vad: Vad? = null
-    private var recorder: AudioRecord? = null
-    private var captureThread: Thread? = null
     private var decoder: ExecutorService? = null
 
+    // Only touched from the mic thread (see onAudio).
     private var gain = 1f
-    private var channelsInUse = 1
+    private var lastSpeaking = false
 
     override fun start(): Boolean {
         val missing = ModelFiles.missing(context)
@@ -83,15 +78,15 @@ class LocalSpeechEngine(
 
         return try {
             loadModels()
-            val rec = openRecorder()
-            recorder = rec
             decoder = Executors.newSingleThreadExecutor { r -> Thread(null, r, "deafy-whisper", DECODE_STACK_BYTES) }
-            rec.startRecording()
-            captureThread = Thread({ captureLoop(rec) }, "deafy-capture").also { it.start() }
+            if (!MicStream.acquire(context, micListener)) {
+                throw IllegalStateException("Microphone could not be opened")
+            }
 
             val languageName = Settings.captionLanguage.title
             val cleaning = if (denoiser != null) " · noise cleaning on" else ""
-            onStatus("Offline captions · $languageName · ${channelsInUse} mic${if (channelsInUse > 1) "s" else ""}$cleaning")
+            val mics = MicStream.channels
+            onStatus("Offline captions · $languageName · $mics mic${if (mics > 1) "s" else ""}$cleaning")
             true
         } catch (e: Throwable) {
             Log.e(TAG, "local speech failed to start", e)
@@ -104,10 +99,11 @@ class LocalSpeechEngine(
 
     override fun stop() {
         running.set(false)
-        captureThread?.join(2000)
-        captureThread = null
         release()
     }
+
+    /** Receives the shared microphone stream (see [MicStream]). */
+    private val micListener = MicStream.Listener { mono -> onAudio(mono) }
 
     private fun loadModels() {
         val config = OfflineRecognizerConfig(
@@ -121,7 +117,7 @@ class LocalSpeechEngine(
                     task = "transcribe",
                 ),
                 tokens = ModelFiles.file(context, ModelFiles.WHISPER_TOKENS).path,
-                numThreads = 2,
+                numThreads = WHISPER_THREADS,
                 debug = false,
                 provider = "cpu",
                 modelType = "whisper",
@@ -154,10 +150,12 @@ class LocalSpeechEngine(
                 sileroVadModelConfig = SileroVadModelConfig(
                     model = ModelFiles.file(context, ModelFiles.VAD).path,
                     threshold = VAD_THRESHOLD,
-                    minSilenceDuration = 0.8f,   // a pause this long ends a phrase (longer = fewer mid-word cuts)
+                    minSilenceDuration = 0.5f,   // a pause this long ends a phrase; shorter = captions appear sooner
                     minSpeechDuration = 0.25f,
                     windowSize = VAD_WINDOW,
-                    maxSpeechDuration = 28f,     // Whisper works on 30 s windows; cut just under that
+                    // Cut long speech into chunks so captions keep flowing. Previously a speaker
+                    // who did not pause for up to 28 s got no captions at all in that time.
+                    maxSpeechDuration = 10f,
                 ),
                 sampleRate = SAMPLE_RATE,
                 numThreads = 1,
@@ -168,84 +166,27 @@ class LocalSpeechEngine(
     }
 
     /**
-     * Opens the microphone. With "use all microphones" on, request a stereo (or
-     * front/back) capture so the phone's second microphone is included, then average the
-     * channels. Falls back to mono if the device does not provide it.
+     * Receives mono 16 kHz audio from the shared [MicStream], on the mic thread.
+     * The stream is shared with sound alerts, so the samples are copied before boosting.
      */
-    private fun openRecorder(): AudioRecord {
-        val wantMulti = Settings.useAllMics
-        val candidates = if (wantMulti) {
-            buildList {
-                // Front + back microphones (Android 10+). Falls back to stereo, then mono.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) add(AudioFormat.CHANNEL_IN_FRONT or AudioFormat.CHANNEL_IN_BACK)
-                add(AudioFormat.CHANNEL_IN_STEREO)
-                add(AudioFormat.CHANNEL_IN_MONO)
-            }
-        } else {
-            listOf(AudioFormat.CHANNEL_IN_MONO)
+    private fun onAudio(mono: FloatArray) {
+        if (!running.get()) return
+        val v = vad ?: return
+        val samples = mono.copyOf()
+        applyBoost(samples)
+
+        v.acceptWaveform(samples)
+        while (!v.empty()) {
+            val segment = v.front()
+            v.pop()
+            submit(segment.samples)
         }
-        for (mask in candidates) {
-            val minBytes = AudioRecord.getMinBufferSize(SAMPLE_RATE, mask, AudioFormat.ENCODING_PCM_16BIT)
-            if (minBytes <= 0) continue
-            val channels = Integer.bitCount(mask)
-            val rec = AudioRecord(
-                // VOICE_RECOGNITION avoids the phone's voice-call noise suppression on most devices.
-                MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                SAMPLE_RATE,
-                mask,
-                AudioFormat.ENCODING_PCM_16BIT,
-                max(minBytes * 2, SAMPLE_RATE * channels * 2 / 2),
-            )
-            if (rec.state == AudioRecord.STATE_INITIALIZED) {
-                channelsInUse = channels
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    // Point beamforming-capable mics at the user's mouth when the device supports it.
-                    rec.setPreferredMicrophoneDirection(MIC_DIRECTION_TOWARDS_USER)
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    rec.setPreferredMicrophoneFieldDimension(1.0f)
-                }
-                return rec
-            }
-            rec.release()
-        }
-        throw IllegalStateException("Microphone could not be opened")
-    }
 
-    private fun captureLoop(rec: AudioRecord) {
-        val channels = channelsInUse
-        val pcm = ShortArray(CHUNK_FRAMES * channels)
-        var lastSpeaking = false
-
-        while (running.get()) {
-            val read = rec.read(pcm, 0, pcm.size)
-            if (read <= 0) continue
-            val frames = read / channels
-
-            // Downmix all channels to mono.
-            val mono = FloatArray(frames)
-            for (f in 0 until frames) {
-                var sum = 0f
-                for (c in 0 until channels) sum += pcm[f * channels + c]
-                mono[f] = sum / channels / 32768f
-            }
-
-            applyBoost(mono)
-
-            val v = vad ?: break
-            v.acceptWaveform(mono)
-            while (!v.empty()) {
-                val segment = v.front()
-                v.pop()
-                submit(segment.samples)
-            }
-
-            val speaking = v.isSpeechDetected()
-            if (speaking != lastSpeaking) {
-                lastSpeaking = speaking
-                main.post {
-                    if (running.get()) AppState.update { it.copy(partial = if (speaking) "Hearing speech…" else "") }
-                }
+        val speaking = v.isSpeechDetected()
+        if (speaking != lastSpeaking) {
+            lastSpeaking = speaking
+            main.post {
+                if (running.get()) AppState.update { it.copy(partial = if (speaking) "Hearing speech…" else "") }
             }
         }
     }
@@ -341,9 +282,8 @@ class LocalSpeechEngine(
     }
 
     private fun release() {
-        try { recorder?.stop() } catch (_: Exception) {}
-        recorder?.release()
-        recorder = null
+        // Unsubscribe first: after this returns, onAudio is never called again.
+        MicStream.release(micListener)
         decoder?.shutdownNow()
         decoder = null
         vad?.release()
@@ -358,9 +298,10 @@ class LocalSpeechEngine(
     companion object {
         private const val TAG = "LocalSpeech"
         private const val DECODE_STACK_BYTES = 16L * 1024 * 1024
-        private const val SAMPLE_RATE = 16000
+        private const val SAMPLE_RATE = MicStream.SAMPLE_RATE
+        /** Whisper decode threads: use the phone's cores (was fixed at 2). */
+        private val WHISPER_THREADS = Runtime.getRuntime().availableProcessors().coerceIn(2, 4)
         private const val VAD_WINDOW = 512
-        private const val CHUNK_FRAMES = 1600        // 100 ms
         private const val VAD_THRESHOLD = 0.5f
         private const val TARGET_RMS = 0.08f   // lower target keeps loud speech from clipping
         private const val SILENCE_RMS = 0.002f
@@ -369,7 +310,6 @@ class LocalSpeechEngine(
         private const val TARGET_PEAK = 0.9f
         private const val MAX_NORMALIZE_GAIN = 6f
         private const val SILENT_PEAK = 1e-3f
-        private const val MIC_DIRECTION_TOWARDS_USER = 1
 
         private val NON_LATIN = Regex("[\\p{IsHan}\\p{IsCyrillic}\\p{IsArabic}\\p{IsHiragana}\\p{IsKatakana}\\p{IsHangul}\\p{IsThai}\\p{IsDevanagari}]")
 

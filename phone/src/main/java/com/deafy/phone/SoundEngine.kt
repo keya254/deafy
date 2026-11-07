@@ -16,9 +16,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Live sound-event detection on the phone with a bundled YAMNet model (assets/yamnet.tflite).
  *
- * Pipeline: classify a rolling window ~every 500 ms -> keep only enabled labels above the
- * user's threshold -> require the same label in 2 consecutive windows -> per-label cooldown
- * -> emit an alert. Audio is processed in memory and never written to disk.
+ * Audio comes from the shared [MicStream], so it works alongside captions. Pipeline: classify
+ * a rolling window ~every 500 ms -> keep only enabled labels above the user's threshold ->
+ * require the same label in 2 consecutive windows -> per-label cooldown -> emit an alert.
+ * Audio is processed in memory and never written to disk.
  */
 class SoundEngine(
     private val context: Context,
@@ -30,8 +31,14 @@ class SoundEngine(
     private val main = Handler(Looper.getMainLooper())
     private val running = AtomicBoolean(false)
     private var classifier: AudioClassifier? = null
-    private var recorder: android.media.AudioRecord? = null
     private var worker: Thread? = null
+
+    // Rolling window of the most recent audio. Filled by the mic thread, read by the worker.
+    private val audioLock = Any()
+    private var audio: AudioData? = null          // guarded by audioLock
+    private var samplesLoaded = 0L                // guarded by audioLock
+
+    private val micListener = MicStream.Listener { mono -> onAudio(mono) }
 
     // Smoothing state (only touched from the classifier callback thread).
     private val consecutiveHits = HashMap<String, Int>()
@@ -45,25 +52,39 @@ class SoundEngine(
                 .setBaseOptions(BaseOptions.builder().setModelAssetPath(MODEL_ASSET).build())
                 .setRunningMode(RunningMode.AUDIO_STREAM)
                 .setScoreThreshold(0.05f) // coarse pre-filter; real threshold applied in onResult
-                .setMaxResults(MAX_RESULTS)
+                // Return every label above the pre-filter. A top-10 cut lets traffic labels
+                // ("Vehicle", "Car", "Traffic noise") push a horn out of the list.
+                .setMaxResults(-1)
                 .setResultListener { result -> onResult(result) }
                 .setErrorListener { e -> Log.w(TAG, "classifier error", e) }
                 .build()
 
             val c = AudioClassifier.createFromOptions(context, options)
             classifier = c
-            val rec = c.createAudioRecord()
-            recorder = rec
-            // One YAMNet window: 0.975 s at 16 kHz mono = 15600 samples.
-            val audio = AudioData.create(rec.format, WINDOW_SAMPLES)
-            rec.startRecording()
+            val format = AudioData.AudioDataFormat.builder()
+                .setNumOfChannels(1)
+                .setSampleRate(MicStream.SAMPLE_RATE.toFloat())
+                .build()
+            synchronized(audioLock) {
+                audio = AudioData.create(format, WINDOW_SAMPLES)
+                samplesLoaded = 0
+            }
+
+            if (!MicStream.acquire(context, micListener)) {
+                throw IllegalStateException("Microphone could not be opened")
+            }
 
             worker = Thread({
                 while (running.get()) {
                     try {
-                        audio.load(rec)
-                        c.classifyAsync(audio, SystemClock.uptimeMillis())
                         Thread.sleep(INTERVAL_MS)
+                        synchronized(audioLock) {
+                            // Wait until one full window has arrived, so the first results are not padding.
+                            val buf = audio
+                            if (buf != null && samplesLoaded >= WINDOW_SAMPLES) {
+                                c.classifyAsync(buf, SystemClock.uptimeMillis())
+                            }
+                        }
                     } catch (e: InterruptedException) {
                         break
                     } catch (e: Exception) {
@@ -93,11 +114,23 @@ class SoundEngine(
     }
 
     private fun release() {
-        try { recorder?.stop() } catch (_: Exception) {}
-        recorder?.release()
-        recorder = null
+        // Unsubscribe first so no more audio arrives while the classifier is closed.
+        MicStream.release(micListener)
         classifier?.close()
         classifier = null
+        synchronized(audioLock) {
+            audio = null
+            samplesLoaded = 0
+        }
+    }
+
+    /** Called on the mic thread with each 100 ms chunk. */
+    private fun onAudio(mono: FloatArray) {
+        synchronized(audioLock) {
+            val buf = audio ?: return
+            buf.load(mono)
+            samplesLoaded += mono.size
+        }
     }
 
     private fun onResult(result: AudioClassifierResult) {
@@ -150,8 +183,8 @@ class SoundEngine(
         private const val TAG = "SoundEngine"
         private const val MODEL_ASSET = "yamnet.tflite"
         private const val INTERVAL_MS = 500L
+        // One YAMNet window: 0.975 s at 16 kHz mono = 15600 samples.
         private const val WINDOW_SAMPLES = 15600
-        private const val MAX_RESULTS = 10
         private const val REQUIRED_CONSECUTIVE = 2
         private const val COOLDOWN_MS = 10_000L
         private const val EVENT_COOLDOWN_MS = 4_000L

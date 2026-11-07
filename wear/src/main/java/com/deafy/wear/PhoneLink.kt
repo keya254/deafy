@@ -49,7 +49,7 @@ object PhoneLink {
                 phoneConnected = false,
                 captionsOn = false,
                 soundOn = false,
-                note = "Phone not nearby. Bring it close and open Deafy.",
+                note = "Phone not nearby. Bring it close and open Caption Flow.",
             )
         }
     }

@@ -95,7 +95,7 @@ fun HomeScreen(
 @Composable
 private fun Header(ui: UiState) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Deafy", style = MaterialTheme.typography.headlineMedium)
+        Text("Caption Flow", style = MaterialTheme.typography.headlineMedium)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AssistChip(
                 onClick = { WatchLink.refresh() },
