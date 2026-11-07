@@ -55,7 +55,9 @@ object Settings {
 
     // v2: new traffic defaults. A new key means existing installs pick up the new defaults.
     private const val KEY_LABELS = "sound_labels_v2"
-    private const val KEY_THRESHOLD = "sound_threshold"
+    // v2: the 0.3 default. Older saved values (often 0.5+) were set while detection was broken
+    // and hid sirens and horns. A new key means existing installs pick up the new default.
+    private const val KEY_THRESHOLD = "sound_threshold_v2"
     private const val KEY_PATTERN_PREFIX = "pattern_"
 
     private const val KEY_VIBRATE_PHONE = "vibrate_phone"
