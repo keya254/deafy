@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
+import android.os.SystemClock
 import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -150,12 +151,12 @@ class LocalSpeechEngine(
                 sileroVadModelConfig = SileroVadModelConfig(
                     model = ModelFiles.file(context, ModelFiles.VAD).path,
                     threshold = VAD_THRESHOLD,
-                    minSilenceDuration = 0.5f,   // a pause this long ends a phrase; shorter = captions appear sooner
+                    minSilenceDuration = 0.4f,   // a pause this long ends a phrase; shorter = captions appear sooner
                     minSpeechDuration = 0.25f,
                     windowSize = VAD_WINDOW,
-                    // Cut long speech into chunks so captions keep flowing. Previously a speaker
-                    // who did not pause for up to 28 s got no captions at all in that time.
-                    maxSpeechDuration = 10f,
+                    // Cut long speech every few seconds so captions keep flowing. Whisper always
+                    // processes a fixed 30 s window, so each cut costs one decode.
+                    maxSpeechDuration = 4f,
                 ),
                 sampleRate = SAMPLE_RATE,
                 numThreads = 1,
@@ -214,10 +215,12 @@ class LocalSpeechEngine(
             val rec = recognizer ?: return@execute
             val stream = rec.createStream()
             try {
+                val started = SystemClock.uptimeMillis()
                 val denoised = denoiser?.let { d -> d.run(samples, SAMPLE_RATE).samples } ?: samples
                 stream.acceptWaveform(condition(denoised), SAMPLE_RATE)
                 rec.decode(stream)
                 val text = clean(rec.getResult(stream).text)
+                Log.d(TAG, "decoded ${samples.size / SAMPLE_RATE.toFloat()} s of speech in ${SystemClock.uptimeMillis() - started} ms")
                 if (text != null) {
                     main.post {
                         if (!running.get()) return@post

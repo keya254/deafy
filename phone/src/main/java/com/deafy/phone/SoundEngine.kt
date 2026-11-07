@@ -54,7 +54,8 @@ class SoundEngine(
                 .setScoreThreshold(0.05f) // coarse pre-filter; real threshold applied in onResult
                 // Return every label above the pre-filter. A top-10 cut lets traffic labels
                 // ("Vehicle", "Car", "Traffic noise") push a horn out of the list.
-                .setMaxResults(-1)
+                // MediaPipe rejects -1 here, so use the YAMNet class count instead.
+                .setMaxResults(YAMNET_CLASS_COUNT)
                 .setResultListener { result -> onResult(result) }
                 .setErrorListener { e -> Log.w(TAG, "classifier error", e) }
                 .build()
@@ -185,6 +186,7 @@ class SoundEngine(
         private const val INTERVAL_MS = 500L
         // One YAMNet window: 0.975 s at 16 kHz mono = 15600 samples.
         private const val WINDOW_SAMPLES = 15600
+        private const val YAMNET_CLASS_COUNT = 521
         private const val REQUIRED_CONSECUTIVE = 2
         private const val COOLDOWN_MS = 10_000L
         private const val EVENT_COOLDOWN_MS = 4_000L
