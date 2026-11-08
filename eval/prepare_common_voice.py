@@ -70,9 +70,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dir", required=True, type=Path, help="extracted Common Voice folder (contains test.tsv and clips/)")
     parser.add_argument("--tsv", default="test.tsv", help="split file to sample from (default: test.tsv)")
-    parser.add_argument("--n", type=int, default=200, help="number of clips to sample (default: 200)")
+    parser.add_argument("--n", type=int, default=200, help="number of clips to sample; 0 means all (default: 200)")
     parser.add_argument("--seed", type=int, default=1, help="random seed, so the sample is repeatable")
+    parser.add_argument("--out", type=Path, default=OUT, help="output folder (default: eval/cv). Use a separate folder for training data.")
     args = parser.parse_args()
+    out = args.out
+    if args.n == 0:
+        args.n = float("inf")
 
     tsv = args.dir / args.tsv
     clips_dir = args.dir / "clips"
@@ -87,8 +91,8 @@ def main() -> int:
     rng = random.Random(args.seed)
     rng.shuffle(rows)
 
-    audio_dir = OUT / "audio"
-    refs_dir = OUT / "references"
+    audio_dir = out / "audio"
+    refs_dir = out / "references"
     audio_dir.mkdir(parents=True, exist_ok=True)
     refs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -122,13 +126,13 @@ def main() -> int:
         print("No clips could be converted. Is ffmpeg installed?", file=sys.stderr)
         return 1
 
-    with (OUT / "manifest.csv").open("w", newline="", encoding="utf-8") as f:
+    with (out / "manifest.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=MANIFEST_COLUMNS)
         writer.writeheader()
         writer.writerows(manifest_rows)
 
     total = sum(r["duration_s"] for r in manifest_rows)
-    print(f"Wrote {len(manifest_rows)} clips ({total / 60:.1f} min) to {OUT}. Skipped {skipped}.")
+    print(f"Wrote {len(manifest_rows)} clips ({total / 60:.1f} min) to {out}. Skipped {skipped}.")
     return 0
 
 

@@ -16,3 +16,6 @@ eval/cv/
 eval/fleurs/
 __pycache__/
 eval/models/
+training/.venv/
+training/data/
+training/runs/
