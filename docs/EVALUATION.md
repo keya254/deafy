@@ -18,12 +18,24 @@ Your own recordings are the most important test, because they match real use. Op
 | Set | Languages and content | Size | Licence | Use in this project |
 |-----|----------------------|------|---------|---------------------|
 | **Mozilla Common Voice, Scripted Speech 27.0, Swahili** | Kiswahili read sentences, clean studio-like recordings, from 1,525 speakers | About 392 h validated | CC0. Mozilla forbids re-hosting or mirroring, and access is through the Mozilla Data Collective | **Baseline. Adopted now** (see below) |
-| **Google FLEURS, `sw_ke` and `en_us`** | Read sentences in Kenyan Swahili and English. The same sentences are in both languages, so it compares them directly | Not checked | CC-BY-4.0. Give credit | Recommended second test set for clean Swahili and English |
+| **Google FLEURS, `sw_ke` and `en_us`** | Read sentences in Kenyan Swahili and English. Several speakers read some sentences, so each recording is its own clip | `sw_ke` test: 487 clips, 115.7 min. `en_us` test: 647 clips, 106.5 min | CC-BY-4.0. Give credit | **Adopted now** (see below) |
 | **AfriSwitch (intronhealth)** | Swahili and English code-switching from YouTube and podcasts, with English spans tagged. Test split only | 650 utterances, 3.89 h | CC BY-NC-SA 4.0. Non-commercial, share-alike. Do not redistribute | Best match for mixed speech. Use for internal evaluation only, and only if the owner accepts the licence |
 | **AfriSpeech-200 (Kenyan English subset)** | Accented English from 137 Kenyan speakers, clinical and general speech | 8,304 clips, 20.89 h | CC BY-NC-SA 4.0. Gated on Hugging Face. Non-commercial | Kenyan-accented English. Same licence caveat as AfriSwitch |
 | **Liva AI Swahili-ASR** | Conversational Swahili, with Sheng and 5 to 10% English code-switching | About 1,400 h, train split only | CC-BY-4.0 | Would need a held-out part carved out. Good for conversational speech |
 
 The licence rules matter for this project, which is MIT-licensed and free. The non-commercial sets can still be used to measure accuracy, as long as their data is not redistributed. Decide with the project owner before any results are published.
+
+### Google FLEURS (Swahili and English)
+
+Download the test split for each language from the Hugging Face `google/fleurs` dataset into `eval/fleurs/<lang>/`: `data/<lang>/test.tsv` and `data/<lang>/audio/test.tar.gz`. Then run:
+
+```sh
+python3 eval/prepare_fleurs.py --dir eval/fleurs/sw_ke
+python3 eval/prepare_fleurs.py --dir eval/fleurs/en_us
+python3 eval/wer.py --manifest eval/fleurs/sw_ke/manifest.csv --references eval/fleurs/sw_ke/references results.csv
+```
+
+`eval/fleurs/` is git-ignored. Attribution: Google FLEURS, CC-BY-4.0. The pipeline check (references scored against themselves) gives 0.0% WER, so the scoring path is consistent. It says nothing about any engine yet.
 
 ### Baseline: Common Voice Swahili
 
@@ -127,3 +139,5 @@ _Not run yet._
 | `eval/wer.py` | Computes WER and the breakdowns | Yes |
 | `eval/prepare_common_voice.py` | Samples Common Voice clips into `eval/cv/` | Yes |
 | `eval/cv/` | Common Voice audio, references, and manifest | **No** (git-ignored, Mozilla terms) |
+| `eval/prepare_fleurs.py` | Extracts FLEURS test clips into `eval/fleurs/<lang>/` | Yes |
+| `eval/fleurs/` | FLEURS archives, audio, references, and manifests | **No** (git-ignored, large) |
