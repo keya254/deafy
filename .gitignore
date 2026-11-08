@@ -14,3 +14,4 @@ captures/
 eval/audio/
 eval/cv/
 eval/fleurs/
+__pycache__/
