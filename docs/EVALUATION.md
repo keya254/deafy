@@ -126,7 +126,28 @@ These are starting points, not decisions. They are agreed with users and then fi
 
 ## Results
 
-_Not run yet._
+### Run 1: on-device Whisper small (int8), FLEURS test sets, 8 Nov 2026
+
+Engine: sherpa-onnx 2.0.1 (same version as the app), Whisper small int8 (`sherpa-onnx-whisper-small`, encoder and decoder int8). Run on a Mac by `eval/run_sherpa_whisper.py`. Results are in `eval/results/`.
+
+| Set | Language setting | Clips | Words | WER |
+|-----|------------------|-------|-------|-----|
+| FLEURS `sw_ke` test | Swahili | 487 | 9,982 | **79.7%** |
+| FLEURS `en_us` test | English | 647 | 14,404 | **7.6%** |
+
+Median real-time factor on the Mac for English was 0.38 (decode time divided by audio time). Swahili was about 0.5 on a sample. These are Mac numbers and do not show phone speed.
+
+What this run does **not** match in the app:
+- Each clip is decoded whole. The phone splits speech with Silero VAD first.
+- No noise removal (GTCRN), gain, or normalisation.
+- The language is fixed per run. The app's "Mixed" mode (auto-detect) was not tested.
+- The app's caption cleaner (`clean()`) is not applied, so some hallucinations would be removed on the phone.
+
+What it shows: on clean read Swahili, the current offline model is far less accurate than on English. Swahili captions on the phone are likely to be poor. Hosted candidates should be judged against this baseline. The pass criterion "lower WER than on-device by at least 5 points" now has a concrete reference: 79.7% for Swahili and 7.6% for English.
+
+Open questions before the next run:
+- Confirm the phone's model is the same Whisper small int8 that this run used. The file sizes match, but the exact variant has not been checked.
+- Run the Common Voice baseline (needs your Mozilla download) and your own recordings, which measure real-use conditions.
 
 ## Files
 
