@@ -11,6 +11,31 @@ Status: **draft.** The pass criteria are proposals. They must be agreed with Dea
 3. **Same test for every engine.** Each engine gets the same clips, in the same order, with the same settings.
 4. **Measure what users feel.** Report word error rate (WER) by language and environment, plus latency. An average alone hides the cases that matter.
 
+## Open test sets
+
+Your own recordings are the most important test, because they match real use. Open data can run alongside them, to give a baseline and to test mixed speech without waiting for consent.
+
+| Set | Languages and content | Size | Licence | Use in this project |
+|-----|----------------------|------|---------|---------------------|
+| **Mozilla Common Voice, Scripted Speech 27.0, Swahili** | Kiswahili read sentences, clean studio-like recordings, from 1,525 speakers | About 392 h validated | CC0. Mozilla forbids re-hosting or mirroring, and access is through the Mozilla Data Collective | **Baseline. Adopted now** (see below) |
+| **Google FLEURS, `sw_ke` and `en_us`** | Read sentences in Kenyan Swahili and English. The same sentences are in both languages, so it compares them directly | Not checked | CC-BY-4.0. Give credit | Recommended second test set for clean Swahili and English |
+| **AfriSwitch (intronhealth)** | Swahili and English code-switching from YouTube and podcasts, with English spans tagged. Test split only | 650 utterances, 3.89 h | CC BY-NC-SA 4.0. Non-commercial, share-alike. Do not redistribute | Best match for mixed speech. Use for internal evaluation only, and only if the owner accepts the licence |
+| **AfriSpeech-200 (Kenyan English subset)** | Accented English from 137 Kenyan speakers, clinical and general speech | 8,304 clips, 20.89 h | CC BY-NC-SA 4.0. Gated on Hugging Face. Non-commercial | Kenyan-accented English. Same licence caveat as AfriSwitch |
+| **Liva AI Swahili-ASR** | Conversational Swahili, with Sheng and 5 to 10% English code-switching | About 1,400 h, train split only | CC-BY-4.0 | Would need a held-out part carved out. Good for conversational speech |
+
+The licence rules matter for this project, which is MIT-licensed and free. The non-commercial sets can still be used to measure accuracy, as long as their data is not redistributed. Decide with the project owner before any results are published.
+
+### Baseline: Common Voice Swahili
+
+Run `eval/prepare_common_voice.py` on a Swahili Scripted Speech folder you have downloaded from the Mozilla Data Collective. It samples validated clips from the test split and writes them to `eval/cv/` (git-ignored), with references and a manifest. Score any engine against it with:
+
+```sh
+python3 eval/prepare_common_voice.py --dir /path/to/cv-swahili --n 200
+python3 eval/wer.py --manifest eval/cv/manifest.csv --references eval/cv/references results.csv
+```
+
+Read speech is cleaner than real use, so the baseline shows how well an engine does on clear Swahili. It does not show how it does in a matatu. Keep both, and report them separately.
+
 ## What to record
 
 Recordings should match real use: a phone held at a normal distance, in the rooms people actually use.
@@ -100,3 +125,5 @@ _Not run yet._
 | `eval/results/<engine>.csv` | Hypothesis text per clip, per engine | Yes |
 | `eval/audio/` | The recordings | **No** (git-ignored) |
 | `eval/wer.py` | Computes WER and the breakdowns | Yes |
+| `eval/prepare_common_voice.py` | Samples Common Voice clips into `eval/cv/` | Yes |
+| `eval/cv/` | Common Voice audio, references, and manifest | **No** (git-ignored, Mozilla terms) |

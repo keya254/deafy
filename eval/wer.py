@@ -9,6 +9,7 @@ Inputs (paths are relative to this file's folder by default):
 Usage:
   python3 eval/wer.py                     # all engines in results/
   python3 eval/wer.py results/whisper.csv # one engine
+  python3 eval/wer.py --manifest eval/cv/manifest.csv --references eval/cv/references results.csv
 
 Scoring rules (from docs/EVALUATION.md):
   - Text is lowercased and punctuation is removed before scoring.
@@ -16,6 +17,7 @@ Scoring rules (from docs/EVALUATION.md):
     produces at that spot count as insertions, so keep [unclear] rare.
 """
 
+import argparse
 import csv
 import re
 import sys
@@ -107,14 +109,20 @@ def report(engine: str, manifest, hyps, refs_dir: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    manifest_path = HERE / "manifest.csv"
-    refs_dir = HERE / "references"
+    parser = argparse.ArgumentParser(description="Word error rate for caption tests. See docs/EVALUATION.md.")
+    parser.add_argument("--manifest", type=Path, default=HERE / "manifest.csv")
+    parser.add_argument("--references", type=Path, default=HERE / "references")
+    parser.add_argument("results", nargs="*", type=Path, help="results CSV files (default: eval/results/*.csv)")
+    args = parser.parse_args(argv)
+
+    manifest_path = args.manifest
+    refs_dir = args.references
     if not manifest_path.exists():
         print(f"No manifest at {manifest_path}", file=sys.stderr)
         return 1
     manifest = load_manifest(manifest_path)
 
-    result_files = [Path(a) for a in argv] or sorted((HERE / "results").glob("*.csv"))
+    result_files = args.results or sorted((HERE / "results").glob("*.csv"))
     if not result_files:
         print("No results files found in eval/results/", file=sys.stderr)
         return 1
