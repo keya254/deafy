@@ -5,12 +5,12 @@ plugins {
 }
 
 android {
-    namespace = "com.deafy.wear"
+    namespace = "tech.briankeya.opencaption.wear"
     compileSdk = 35
 
     defaultConfig {
         // Same package as the phone app. Embedded in the phone APK (wearApp) so Galaxy Wearable installs it on the watch.
-        applicationId = "com.deafy.app"
+        applicationId = "tech.briankeya.opencaption"
         minSdk = 30
         targetSdk = 35
         versionCode = 1

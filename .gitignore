@@ -1,7 +1,13 @@
-*.iml
-.gradle/
-local.properties
-.idea/
+# Build outputs
 build/
+.gradle/
+.kotlin/
+
+# Local machine config (SDK path)
+local.properties
+
+# IDE and OS files
+*.iml
+.idea/
 captures/
 .DS_Store

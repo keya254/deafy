@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Deafy"
+rootProject.name = "OpenCaption"
 include(":shared", ":phone", ":wear")

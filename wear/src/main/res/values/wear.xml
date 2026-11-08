@@ -2,6 +2,6 @@
 <resources>
     <!-- Lets the phone discover this watch app for alerts and captions. -->
     <string-array name="android_wear_capabilities">
-        <item>deafy_watch_app</item>
+        <item>opencaption_watch_app</item>
     </string-array>
 </resources>

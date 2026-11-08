@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.deafy.shared"
+    namespace = "tech.briankeya.opencaption.shared"
     compileSdk = 35
 
     defaultConfig {
@@ -19,4 +19,10 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+dependencies {
+    // Unit tests run on the JVM, so use a real org.json instead of the Android stub.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

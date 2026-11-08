@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.deafy.phone"
+    namespace = "tech.briankeya.opencaption.phone"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.deafy.app"
+        applicationId = "tech.briankeya.opencaption"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -62,6 +62,6 @@ dependencies {
     // On-device sound classification (YAMNet via MediaPipe Tasks).
     implementation("com.google.mediapipe:tasks-audio:0.10.14")
 
-    // Offline speech recognition (Whisper via sherpa-onnx), see libs/ and README.
+    // Offline speech recognition (Whisper via sherpa-onnx), see libs/ and docs/MODELS.md.
     implementation(files("libs/sherpa-onnx-2.0.1.aar"))
 }

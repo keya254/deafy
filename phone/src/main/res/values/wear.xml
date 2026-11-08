@@ -2,6 +2,6 @@
 <resources>
     <!-- Lets the watch discover this phone app for commands. -->
     <string-array name="android_wear_capabilities">
-        <item>deafy_phone_app</item>
+        <item>opencaption_phone_app</item>
     </string-array>
 </resources>
