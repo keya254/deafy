@@ -107,7 +107,7 @@ Pass criteria are set before the test, with the people who will use the app. Set
 | Phase | Work | Done when |
 |-------|------|-----------|
 | 0. Decide | Hosting provider, region, budget, owner for the service, legal review of the privacy rules | Written decisions added to this page |
-| 1. Measure | Test set, WER and latency for the on-device model and two hosted candidates | A results table with numbers and the chosen model |
+| 1. Measure | Test set, WER and latency for the on-device model and two hosted candidates. Protocol in [EVALUATION.md](EVALUATION.md) | A results table with numbers and the chosen model |
 | 2. Service | Streaming endpoint, token auth, health check, logs with no audio, Docker image, deploy script | A staging endpoint passes the latency and privacy checks |
 | 3. App client | `HostedCaptionEngine`, `CaptionRouter`, the consent screen, the status label, Settings toggle | Hosted mode works and falls back to offline on a simulated network drop |
 | 4. Trial | Small group of Deaf users, with consent, for a few weeks | Feedback and incident review; decide on public release |
