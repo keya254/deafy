@@ -112,6 +112,18 @@ To add a sound, add its exact YAMNet name (it must appear in the model's label l
 
 `Settings` wraps SharedPreferences. Keys are versioned when a default changes (`sound_labels_v2`, `sound_threshold_v2`), so existing installs pick up new defaults without a manual reset. Do this for any default you change, and say so in the commit message.
 
+## Accessibility profiles
+
+Users can import a profile made with the [AI for Accessibility Toolkit](https://github.com/AI-for-Accessibility-Collective/AI-for-Accessibility-Toolkit) (Apache-2.0). Settings → Accessibility profile.
+
+- **Format.** The toolkit's AbilityModel JSON (`schemaVersion` 1), from `librarian.getAbilityModel()`. Only `needs` (each with `dimension`, `value`, and `strength`) and `supportAreas` are read. A sample is in [docs/examples/sample-profile.json](examples/sample-profile.json).
+- **Rules.** `AccessibilityProfile` in `shared` is a Kotlin port of the toolkit's `surfaces/mobile.js` and `core/strength.js`. When two needs share a dimension, `floor` beats `preference`, which beats `hint`. On a tie, the later entry wins. Unknown strengths count as `preference`. `motor` in `supportAreas` enlarges touch targets (48 pt instead of 44 pt).
+- **Applied here.** `ProfileImport` (phone) sets the caption text size (`captionTextScale`) and "start captions when the app opens" (`startCaptionsOnOpen`). `MainActivity` honours the second on launch, and asks for microphone permission if needed.
+- **Listed, not applied.** Dark theme, high contrast, bold text, reduced motion, large buttons, read-aloud speed, and simpler language. The note in Settings names them so nothing is dropped silently. Applying them is in the roadmap.
+- **Privacy.** The file is read on the phone and not uploaded. The app keeps only the settings it applies.
+- **Tests.** `AccessibilityProfileTest` checks the port against outputs from the toolkit's own renderer.
+- **Attribution.** See [NOTICE](../NOTICE).
+
 ## Watch
 
 - `PhoneDataService` receives messages from the phone and updates `WearState`.

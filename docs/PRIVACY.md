@@ -16,6 +16,7 @@ Open Caption is designed so that conversations and sounds stay on your devices.
 | Caption text | Phone database (`opencaption.db`) | Until you delete it | **Clear captions** on the Home screen, or uninstall the app |
 | Sound alerts (list shown in the Alerts tab) | Memory only | Until the app closes | Clear alerts, or close the app |
 | Settings | Phone preferences | Until uninstall | Uninstall the app |
+| Accessibility profile (imported file) | Not stored. Only the settings it sets are kept, in Settings. The file is read once and not uploaded. | Until you change the settings | Change the settings in Settings |
 
 No accounts, analytics, or crash reporting are included.
 
@@ -26,6 +27,8 @@ Only text, sound names (for example "Car horn"), confidence scores, vibration pa
 ## Network access
 
 The app declares the internet permission, but it is only used if you turn on **Allow network captions** in Settings. That option is off by default. With it on, Android's network speech service may receive your speech. Keep it off if you need fully offline use.
+
+A hosted speech model is planned as an optional feature. It would be off by default, and audio would leave the phone only after you agree on a clear consent screen. Until that feature ships, the statements above are complete. See [HOSTED-CAPTIONS.md](HOSTED-CAPTIONS.md) for the proposed rules.
 
 ## Accuracy and privacy of models
 

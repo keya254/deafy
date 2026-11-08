@@ -52,6 +52,8 @@ object Settings {
     private const val KEY_CLEAN_AUDIO = "clean_audio"
     private const val KEY_EVENTS = "caption_events"
     private const val KEY_NETWORK = "network_captions"
+    private const val KEY_START_CAPTIONS = "start_captions_on_open"
+    private const val KEY_PROFILE_NOTE = "profile_note"
 
     // v2: new traffic defaults. A new key means existing installs pick up the new defaults.
     private const val KEY_LABELS = "sound_labels_v2"
@@ -102,6 +104,16 @@ object Settings {
     var captionEvents: Set<String>
         get() = p().getStringSet(KEY_EVENTS, SoundLabels.DEFAULT_EVENTS)?.toSet() ?: SoundLabels.DEFAULT_EVENTS
         set(value) = p().edit().putStringSet(KEY_EVENTS, value.toSet()).apply()
+
+    /** Start captions when the app opens. Set by an imported accessibility profile, or by the user. */
+    var startCaptionsOnOpen: Boolean
+        get() = p().getBoolean(KEY_START_CAPTIONS, false)
+        set(value) = p().edit().putBoolean(KEY_START_CAPTIONS, value).apply()
+
+    /** What the last imported accessibility profile changed, shown in Settings. Empty if none. */
+    var profileNote: String
+        get() = p().getString(KEY_PROFILE_NOTE, "") ?: ""
+        set(value) = p().edit().putString(KEY_PROFILE_NOTE, value).apply()
 
     /** Remove background noise from each speech segment before recognition (needs denoiser model). */
     var cleanAudio: Boolean

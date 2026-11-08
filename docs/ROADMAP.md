@@ -43,6 +43,8 @@ This is an early, working prototype. This page lists what it does not do yet, an
 
 1. **Live partial captions** on the offline engine, so words appear while a phrase is still being spoken.
 2. **Streaming speech model** (sherpa-onnx online transducer) for seamless captions, once a model with good Swahili results is found.
+2a. **Hosted captions with offline fallback.** An optional, opt-in server model for better accuracy when online, falling back to the on-device model. Design, privacy rules, and phases are in [HOSTED-CAPTIONS.md](HOSTED-CAPTIONS.md). Starts with measuring accuracy and latency (phase 1).
+2b. **Accessibility profile follow-ups** (see [ARCHITECTURE.md](ARCHITECTURE.md#accessibility-profiles)): apply high contrast to caption colours, and decide whether to use reduced motion and larger buttons in the app. Each one needs a design decision before it is built.
 3. **Measured accuracy**: a public test set of Kenyan English, Kiswahili, and mixed speech, plus word error rate reporting.
 4. **Per-sound sensitivity** and a "test this sound" button in Settings.
 5. **In-app model download** with checksums, so users do not need a computer.

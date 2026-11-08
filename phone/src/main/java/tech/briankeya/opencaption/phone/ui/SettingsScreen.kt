@@ -1,5 +1,7 @@
 package tech.briankeya.opencaption.phone.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -24,6 +27,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import tech.briankeya.opencaption.phone.CaptionLanguage
 import tech.briankeya.opencaption.phone.HoldTime
 import tech.briankeya.opencaption.phone.ModelFiles
+import tech.briankeya.opencaption.phone.ProfileImport
 import tech.briankeya.opencaption.phone.Settings
 import tech.briankeya.opencaption.phone.UiState
 import tech.briankeya.opencaption.phone.WatchLink
@@ -49,12 +54,62 @@ import tech.briankeya.opencaption.shared.VibePattern
 fun SettingsScreen(ui: UiState, onSettingsChanged: () -> Unit) {
     val context = LocalContext.current
 
+    // Bumped after a profile import so sliders and toggles re-read their saved values.
+    var importVersion by remember { mutableIntStateOf(0) }
+    var profileError by remember { mutableStateOf<String?>(null) }
+    val pickProfile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        try {
+            ProfileImport.importFrom(context, uri)
+            profileError = null
+            importVersion++
+            WatchLink.pushStyle()
+            onSettingsChanged()
+        } catch (e: IllegalArgumentException) {
+            profileError = e.message ?: "This file is not an accessibility profile."
+        } catch (e: java.io.IOException) {
+            profileError = "Could not read this file."
+        }
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Text("Settings", style = MaterialTheme.typography.headlineMedium) }
+
+        // ---------------- Accessibility profile ----------------
+        item {
+            SettingsSection("Accessibility profile", "Import a profile from the AI for Accessibility Toolkit") {
+                Text(
+                    "Choose the profile JSON exported from the toolkit. Open Caption applies the settings it supports " +
+                        "and lists the ones it does not use yet. The file is read on this phone and not uploaded.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(onClick = { pickProfile.launch(arrayOf("*/*")) }) {
+                    Text("Import profile file")
+                }
+                profileError?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
+                val note = remember(importVersion) { Settings.profileNote }
+                if (note.isNotEmpty()) {
+                    Text(note, style = MaterialTheme.typography.bodySmall)
+                }
+                var startOnOpen by remember(importVersion) { mutableStateOf(Settings.startCaptionsOnOpen) }
+                ToggleRow(
+                    title = "Start captions when the app opens",
+                    subtitle = "Asks for microphone permission on open if it is not granted yet.",
+                    checked = startOnOpen,
+                    onChecked = {
+                        startOnOpen = it
+                        Settings.startCaptionsOnOpen = it
+                    },
+                )
+            }
+        }
 
         // ---------------- Captions ----------------
         item {
@@ -82,7 +137,7 @@ fun SettingsScreen(ui: UiState, onSettingsChanged: () -> Unit) {
 
                 Spacer(Modifier.padding(4.dp))
 
-                var scale by remember { mutableFloatStateOf(Settings.captionTextScale) }
+                var scale by remember(importVersion) { mutableFloatStateOf(Settings.captionTextScale) }
                 Text("Text size: ${(scale * 100).toInt()}%", style = MaterialTheme.typography.titleSmall)
                 Slider(
                     value = scale,

@@ -22,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +76,13 @@ fun OpenCaptionRoot() {
             permissionLauncher.launch(
                 arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
             )
+        }
+    }
+
+    // Starts captions on open when the user (or an imported profile) asked for it.
+    LaunchedEffect(Unit) {
+        if (Settings.startCaptionsOnOpen && !AppState.state.value.captionsOn) {
+            withMicrophone { ListenService.request(context, true, AppState.state.value.soundOn) }
         }
     }
 

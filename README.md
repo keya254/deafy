@@ -21,7 +21,10 @@ Status: early but working. Tested on a Samsung Galaxy S20 Ultra (phone) and a Ga
 | Sound captions | Non-speech events such as `[Clapping]` or `[Laughter]` appear inline in the caption stream. |
 | Watch | Captions, sound alerts, history with scroll-back, and toggles. The phone must stay on and within Bluetooth range. |
 | History | Captions are stored in a local database on the phone, so you can scroll back on the watch. |
+| Accessibility profile | Import a profile made with the [AI for Accessibility Toolkit](https://github.com/AI-for-Accessibility-Collective/AI-for-Accessibility-Toolkit). The app applies the settings it supports, such as caption text size and starting captions on open, and lists the rest. Settings → Accessibility profile. |
 | Privacy | No accounts, no cloud, no analytics. See [docs/PRIVACY.md](docs/PRIVACY.md). |
+
+**Planned:** an optional hosted speech model for better captions when the phone is online, with the on-device model as the offline fallback. Audio would leave the phone only with explicit opt-in. See [docs/HOSTED-CAPTIONS.md](docs/HOSTED-CAPTIONS.md).
 
 ## How it works
 
@@ -71,6 +74,8 @@ docs/     Documentation, including the original feasibility study
 - [Models](docs/MODELS.md): every model, its source, its license, and how to swap it
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Privacy](docs/PRIVACY.md)
+- [Hosted captions plan](docs/HOSTED-CAPTIONS.md): the design for an optional online speech model, and how it falls back to the offline model
+- [Accessibility profiles](docs/ARCHITECTURE.md#accessibility-profiles): how profiles from the AI for Accessibility Toolkit are read and applied
 - [Roadmap and known limitations](docs/ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)
 - [Feasibility study](docs/research/feasibility-study.md): the original research behind the design
@@ -79,6 +84,7 @@ docs/     Documentation, including the original feasibility study
 
 Open Caption builds on these open projects:
 
+- [AI for Accessibility Toolkit](https://github.com/AI-for-Accessibility-Collective/AI-for-Accessibility-Toolkit) (Apache-2.0): the accessibility profile model. The mobile settings mapping is ported to Kotlin with attribution (see [NOTICE](NOTICE)). The toolkit's bearer-token design informs the planned hosted service. Thanks to the AI for Accessibility Collective.
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (Apache-2.0): on-device speech recognition runtime
 - [Whisper](https://github.com/openai/whisper) (MIT): speech recognition model
 - [Silero VAD](https://github.com/snakers4/silero-vad) (MIT): voice activity detection
@@ -89,7 +95,7 @@ Open Caption builds on these open projects:
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). Third-party attribution is in [NOTICE](NOTICE).
 
 ## Author
 

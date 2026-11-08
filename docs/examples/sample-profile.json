@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "supportAreas": ["hearing"],
+  "freeText": "Deaf. I rely on captions and visual alerts.",
+  "language": "standard",
+  "readingLevel": null,
+  "confidence": null,
+  "needs": [
+    { "dimension": "captions", "value": true, "strength": "floor", "source": "example" },
+    { "dimension": "textSize", "value": 1.4, "strength": "preference", "source": "example" },
+    { "dimension": "darkTheme", "value": true, "strength": "preference", "source": "example" }
+  ]
+}

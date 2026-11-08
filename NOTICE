@@ -1,0 +1,20 @@
+Open Caption
+Copyright (c) 2026 Brian Keya
+
+Open Caption is licensed under the MIT License. See LICENSE.
+
+Third-party attribution
+
+This product includes code adapted from the AI for Accessibility Toolkit
+(https://github.com/AI-for-Accessibility-Collective/AI-for-Accessibility-Toolkit),
+licensed under the Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0).
+
+  Adapted file: shared/src/main/java/tech/briankeya/opencaption/shared/AccessibilityProfile.kt
+  Original files: toolkit/surfaces/mobile.js and toolkit/core/strength.js
+  Changes: ported from JavaScript to Kotlin. The mapping rules are unchanged. Only the
+  settings this app can use are applied on the phone.
+
+The toolkit's copyright and license belong to the AI for Accessibility Collective and its
+contributors. Open Caption is not endorsed by them.
+
+Other open-source components are listed in README.md (Acknowledgements) and docs/MODELS.md.
